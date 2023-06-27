@@ -16,7 +16,6 @@ firebase_admin.initialize_app(cred, {
 
 # Telegram bot token
 TOKEN = '5437326616:AAHqAczdPMH_6nP1frR46v6Oa-S3ZDsfpbs'
-# CHAT_ID = '-972780970'
 CHAT_ID = '1281100174'
 bot = Bot(token=TOKEN)
 updater = None
@@ -171,9 +170,6 @@ def send_battery_status():
         soc4 = data.get('SOC Batt 4')
 
         report_message = f"Report :\nSOC Batt 1: {soc1}\nDaya Charge Batt 1: {daya_charging1}\n"
-        # report_message += f"SOC Batt 2: {soc2}\nDaya Charge Batt 2: {daya_charging2}\n"
-        # report_message += f"SOC Batt 3: {soc3}\nDaya Charge Batt 3: {daya_charging3}\n"
-        # report_message += f"SOC Batt 4: {soc4}\nDaya Charge Batt 4: {daya_charging4}\n"
         bot.send_message(chat_id=CHAT_ID, text=report_message)
         start_time = time.time()
         time.sleep(0.10)
@@ -326,8 +322,8 @@ def ac_voltdown():
 
 def job():
     # Schedule the AC volume down command to run every 10 seconds
-    schedule.every(1).seconds.do(ac_voltdown)
-    schedule.every(1).seconds.do(send_battery_status)
+    schedule.every(1).minutes.do(ac_voltdown)
+    schedule.every(1).minutes.do(send_battery_status)
     
 def main():
     global updater
@@ -342,8 +338,6 @@ def main():
     # Start the bot
     updater.start_polling()
     
-    # # Schedule the job
-    # job()
     
     while True:
         schedule.run_pending()
