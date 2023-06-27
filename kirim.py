@@ -326,8 +326,8 @@ def ac_voltdown():
 
 def job():
     # Schedule the AC volume down command to run every 10 seconds
-    schedule.every(1).minutes.do(ac_voltdown)
-    schedule.every(1).minutes.do(send_battery_status)
+    schedule.every(1).seconds.do(ac_voltdown)
+    schedule.every(1).seconds.do(send_battery_status)
     
 def main():
     global updater
