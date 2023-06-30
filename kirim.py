@@ -7,6 +7,7 @@ from firebase_admin import db
 from telegram import Bot
 import schedule
 import time
+from multiprocessing import Process
 
 
 cred = credentials.Certificate("serviceAccountKey.json")
@@ -20,6 +21,9 @@ CHAT_ID = '1281100174'
 bot = Bot(token=TOKEN)
 updater = None
 is_bot_running = False
+
+previous_condition = None
+message_sent = False
 
 def start(update, context):
     global is_bot_running
@@ -37,7 +41,6 @@ def start(update, context):
         context.bot.send_message(chat_id=CHAT_ID, text=f"Selamat Datang di Telkom Bot")
         send_battery_status()
         ac_voltdown()
-        job()
         context.bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
         send_message_with_options(update, context)
 
@@ -146,8 +149,14 @@ def cek_kondisi_pln():
 
         report3 = f"Cek Kondisi PLN:\nDaya PLN: {daya_pln}\nArus PLN: {arus_pln}\nTegangan PLN: {tegangan_pln}\nKondisi PLN: {kondisi_pln}"
         return report3
+    
+
 
 def send_battery_status():
+    
+    global previous_condition
+    global message_sent
+    
     ref = db.reference('/test')
     data = ref.get()
 
@@ -155,45 +164,83 @@ def send_battery_status():
     kondisi_batt2 = data.get('Kondisi Batt 2')
     kondisi_batt3 = data.get('Kondisi Batt 3')
     kondisi_batt4 = data.get('Kondisi Batt 4')
-
-    if any(status == 'Charging' for status in [kondisi_batt1]):
-        bot.send_message(chat_id=CHAT_ID, text="Batterai 1 dalan kondisi Charging")
+    
+    if kondisi_batt1 != previous_condition:  # Check if the condition has changed
         
+        if kondisi_batt1 == 'Charging':
+            bot.send_message(chat_id=CHAT_ID, text="Batterai 1 dalan kondisi Charging")
+    
+            daya_charging1 = data.get('Daya Charge Batt 1')
+            soc1 = data.get('SOC Batt 1')
+
+
+            report_message = f"Report Baterai 1 :\nSOC Batt 1: {soc1}\nDaya Charge Batt 1: {daya_charging1}\n"
+            bot.send_message(chat_id=CHAT_ID, text=report_message)
+            start_time = time.time()
+            time.sleep(0.10)
+            elapsed_time = round((time.time() - start_time) * 1000, 2)
+            bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
+            previous_condition = kondisi_batt1
+            message_sent = True
+
+    if kondisi_batt2 != previous_condition:  # Check if the condition has changed
         
-        daya_charging1 = data.get('Daya Charge Batt 1')
-        daya_charging2 = data.get('Daya Charge Batt 2')
-        daya_charging3 = data.get('Daya Charge Batt 3')
-        daya_charging4 = data.get('Daya Charge Batt 4')
-        soc1 = data.get('SOC Batt 1')
-        soc2 = data.get('SOC Batt 2')
-        soc3 = data.get('SOC Batt 3')
-        soc4 = data.get('SOC Batt 4')
+        if kondisi_batt2 == 'Charging':
+            bot.send_message(chat_id=CHAT_ID, text="Batterai 2 dalan kondisi Charging")
 
-        report_message = f"Report :\nSOC Batt 1: {soc1}\nDaya Charge Batt 1: {daya_charging1}\n"
-        bot.send_message(chat_id=CHAT_ID, text=report_message)
-        start_time = time.time()
-        time.sleep(0.10)
-        elapsed_time = round((time.time() - start_time) * 1000, 2)
-        bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
-    elif any(status == 'Charging' for status in [kondisi_batt2]):
-        bot.send_message(chat_id=CHAT_ID, text="Batterai 2 dalan kondisi Charging")
-        daya_charging1 = data.get('Daya Charge Batt 1')
-        daya_charging2 = data.get('Daya Charge Batt 2')
-        daya_charging3 = data.get('Daya Charge Batt 3')
-        daya_charging4 = data.get('Daya Charge Batt 4')
-        soc1 = data.get('SOC Batt 1')
-        soc2 = data.get('SOC Batt 2')
-        soc3 = data.get('SOC Batt 3')
-        soc4 = data.get('SOC Batt 4')
+            daya_charging2 = data.get('Daya Charge Batt 2')
+            soc2 = data.get('SOC Batt 2')
 
-        report_message = f"Report :\nSOC Batt 2: {soc2}\nDaya Charge Batt 2: {daya_charging2}\n"
-        bot.send_message(chat_id=CHAT_ID, text=report_message)
-        start_time = time.time()
-        time.sleep(0.10)
-        elapsed_time = round((time.time() - start_time) * 1000, 2)
-        bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
-    elif any(status == 'Charging' for status in [kondisi_batt3]):
+
+            report_message = f"Report Baterai 2 :\nSOC Batt 2: {soc2}\nDaya Charge Batt 2: {daya_charging2}\n"
+            bot.send_message(chat_id=CHAT_ID, text=report_message)
+            start_time = time.time()
+            time.sleep(0.10)
+            elapsed_time = round((time.time() - start_time) * 1000, 2)
+            bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
+            previous_condition = kondisi_batt2
+            message_sent = True
+
+    if kondisi_batt3 != previous_condition:  # Check if the condition has changed
+        
+        if kondisi_batt3 == 'Charging':
             bot.send_message(chat_id=CHAT_ID, text="Batterai 3 dalan kondisi Charging")
+
+            daya_charging3 = data.get('Daya Charge Batt 3')
+            soc3 = data.get('SOC Batt 3')
+
+
+            report_message = f"Report Baterai 3 :\nSOC Batt 3: {soc3}\nDaya Charge Batt 3: {daya_charging3}\n"
+            bot.send_message(chat_id=CHAT_ID, text=report_message)
+            start_time = time.time()
+            time.sleep(0.10)
+            elapsed_time = round((time.time() - start_time) * 1000, 2)
+            bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
+            previous_condition = kondisi_batt3
+            message_sent = True
+              
+    if kondisi_batt4 != previous_condition:  # Check if the condition has changed
+        
+        if kondisi_batt4 == 'Charging':
+            bot.send_message(chat_id=CHAT_ID, text="Batterai 4 dalan kondisi Charging")
+
+            daya_charging4 = data.get('Daya Charge Batt 4')
+            soc4 = data.get('SOC Batt 4')
+
+
+            report_message = f"Report Baterai 4 :\nSOC Batt 4: {soc4}\nDaya Charge Batt 4: {daya_charging4}\n"
+            bot.send_message(chat_id=CHAT_ID, text=report_message)
+            start_time = time.time()
+            time.sleep(0.10)
+            elapsed_time = round((time.time() - start_time) * 1000, 2)
+            bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
+            previous_condition = kondisi_batt4
+            message_sent = True 
+     
+    # Check if all batteries are in "Normal" state
+        
+    if [kondisi_batt1, kondisi_batt2, kondisi_batt3, kondisi_batt4] != previous_condition:  # Check if the condition has changed
+        if any(status == 'Discharging' for status in [kondisi_batt1, kondisi_batt2, kondisi_batt3, kondisi_batt4]):
             daya_charging1 = data.get('Daya Charge Batt 1')
             daya_charging2 = data.get('Daya Charge Batt 2')
             daya_charging3 = data.get('Daya Charge Batt 3')
@@ -203,59 +250,26 @@ def send_battery_status():
             soc3 = data.get('SOC Batt 3')
             soc4 = data.get('SOC Batt 4')
 
-            report_message = f"Report :\nSOC Batt 3: {soc3}\nDaya Charge Batt 3: {daya_charging3}\n"
+            report_message = f"Kondisi Baterai Discharging :\nSOC Batt 1: {soc1}\nDaya Charge Batt 1: {daya_charging1}\n"
+            report_message += f"SOC Batt 2: {soc2}\nDaya Charge Batt 2: {daya_charging2}\n"
+            report_message += f"SOC Batt 3: {soc3}\nDaya Charge Batt 3: {daya_charging3}\n"
+            report_message += f"SOC Batt 4: {soc4}\nDaya Charge Batt 4: {daya_charging4}\n"
             bot.send_message(chat_id=CHAT_ID, text=report_message)
             start_time = time.time()
             time.sleep(0.10)
             elapsed_time = round((time.time() - start_time) * 1000, 2)
             bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
-        
-    elif any(status == 'Charging' for status in [kondisi_batt4]):
-                bot.send_message(chat_id=CHAT_ID, text="Batterai 4 dalan kondisi Charging")
-                daya_charging1 = data.get('Daya Charge Batt 1')
-                daya_charging2 = data.get('Daya Charge Batt 2')
-                daya_charging3 = data.get('Daya Charge Batt 3')
-                daya_charging4 = data.get('Daya Charge Batt 4')
-                soc1 = data.get('SOC Batt 1')
-                soc2 = data.get('SOC Batt 2')
-                soc3 = data.get('SOC Batt 3')
-                soc4 = data.get('SOC Batt 4')
-
-                report_message = f"Report :\nSOC Batt 4: {soc4}\nDaya Charge Batt 4: {daya_charging4}\n"
-                bot.send_message(chat_id=CHAT_ID, text=report_message)
-                start_time = time.time()
-                time.sleep(0.10)
-                elapsed_time = round((time.time() - start_time) * 1000, 2)
-                bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")           
-            
-        
-        
-        
-        
-      # Check if all batteries are in "Normal" state
-    elif all(status == 'Discharging' for status in [kondisi_batt1, kondisi_batt2, kondisi_batt3, kondisi_batt4]):
-        bot.send_message(chat_id=CHAT_ID, text="Batterai dalam kondisi Discharging")
-        
-        daya_charging1 = data.get('Daya Charge Batt 1')
-        daya_charging2 = data.get('Daya Charge Batt 2')
-        daya_charging3 = data.get('Daya Charge Batt 3')
-        daya_charging4 = data.get('Daya Charge Batt 4')
-        soc1 = data.get('SOC Batt 1')
-        soc2 = data.get('SOC Batt 2')
-        soc3 = data.get('SOC Batt 3')
-        soc4 = data.get('SOC Batt 4')
-
-        report_message = f"Report :\nSOC Batt 1: {soc1}\nDaya Charge Batt 1: {daya_charging1}\n"
-        report_message += f"SOC Batt 2: {soc2}\nDaya Charge Batt 2: {daya_charging2}\n"
-        report_message += f"SOC Batt 3: {soc3}\nDaya Charge Batt 3: {daya_charging3}\n"
-        report_message += f"SOC Batt 4: {soc4}\nDaya Charge Batt 4: {daya_charging4}\n"
-        bot.send_message(chat_id=CHAT_ID, text=report_message)
-        start_time = time.time()
-        time.sleep(0.10)
-        elapsed_time = round((time.time() - start_time) * 1000, 2)
-        bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
-    else:
-        bot.send_message(chat_id=CHAT_ID, text='Kondisi dalam keadaan Normal') 
+            previous_condition = [kondisi_batt1, kondisi_batt2, kondisi_batt3, kondisi_batt4]   
+            message_sent = True
+        if all(status == 'Normal' for status in [kondisi_batt1, kondisi_batt2, kondisi_batt3, kondisi_batt4]):
+            bot.send_message(chat_id=CHAT_ID, text='Kondisi Semua Baterai Normal')
+            start_time = time.time()
+            time.sleep(0.10)
+            elapsed_time = round((time.time() - start_time) * 1000, 2)
+            bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
+            previous_condition = [kondisi_batt1, kondisi_batt2, kondisi_batt3, kondisi_batt4]   
+            message_sent = True 
+    
 
 
 def send_report_daily(context):
@@ -295,35 +309,61 @@ def stop_bot(update, context):
         context.bot.send_message(chat_id=CHAT_ID, text="Bot tidak dalam kondisi berjalan")
         context.bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
 
-# def ac_voltdown(update, context):
 def ac_voltdown():
+    
+    global previous_condition
+    global message_sent
+    
     ref = db.reference('/test')
     data = ref.get()
     kondisi = data.get('Kondisi')
+    
+    if kondisi != previous_condition:  # Check if the condition has changed
+        previous_condition = kondisi
+    
+        if kondisi == 'AC Voltdown':
+            daya_discharging = data.get('Daya Discharge')
+            soc1 = data.get('SOC Batt 1')
+            soc2 = data.get('SOC Batt 2')
+            soc3 = data.get('SOC Batt 3')
+            soc4 = data.get('SOC Batt 4')
+            report4 = f"Report PLN AC Voltdown:\nKondisi: {kondisi}\nDaya Discharge: {daya_discharging}\nSOC Batt 1: {soc1}\nSOC Batt 2: {soc2}\nSOC Batt 3: {soc3}\nSOC Batt 4: {soc4}"
+            bot.send_message(chat_id=CHAT_ID, text=report4)
+            start_time = time.time()
+            time.sleep(0.10)
+            elapsed_time = round((time.time() - start_time) * 1000, 2)
+            bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
+            message_sent = True
 
-    if kondisi == 'AC Voltdown':
-        daya_discharging = data.get('Daya Discharge')
-        soc1 = data.get('SOC Batt 1')
-        soc2 = data.get('SOC Batt 2')
-        soc3 = data.get('SOC Batt 3')
-        soc4 = data.get('SOC Batt 4')
-        report4 = f"AC Voltdown:\nKondisi: {kondisi}\nDaya Discharge: {daya_discharging}\nSOC Batt 1: {soc1}\nSOC Batt 2: {soc2}\nSOC Batt 3: {soc3}\nSOC Batt 4: {soc4}"
-        bot.send_message(chat_id=CHAT_ID, text=report4)
-        start_time = time.time()
-        time.sleep(0.10)
-        elapsed_time = round((time.time() - start_time) * 1000, 2)
-        bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")
+        elif kondisi == 'Normal':
+            bot.send_message(chat_id=CHAT_ID, text='Kondisi PLN dalam keadaan Normal')
+            start_time = time.time()
+            time.sleep(0.10)
+            elapsed_time = round((time.time() - start_time) * 1000, 2)
+            bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")  
+            message_sent = True
     else:
-        bot.send_message(chat_id=CHAT_ID, text='Kondisi dalam keadaan Normal')
-        start_time = time.time()
-        time.sleep(0.10)
-        elapsed_time = round((time.time() - start_time) * 1000, 2)
-        bot.send_message(chat_id=CHAT_ID, text=f"Waktu respon: {elapsed_time}ms")  
+        message_sent = False
 
-def job():
-    # Schedule the AC volume down command to run every 10 seconds
-    schedule.every(1).minutes.do(ac_voltdown)
-    schedule.every(1).minutes.do(send_battery_status)
+# def jobpln():
+    
+#     schedule.every(5).seconds.do(ac_voltdown)
+    
+
+# def jobbaterai():
+    
+
+#     schedule.every(1).seconds.do(send_battery_status)
+
+def jobpln():
+    while True:
+        ac_voltdown()
+        time.sleep(1)
+
+def jobbaterai():
+    while True:
+        send_battery_status()
+        time.sleep(1)
     
 def main():
     global updater
@@ -338,6 +378,12 @@ def main():
     # Start the bot
     updater.start_polling()
     
+    process1 = Process(target=jobpln)
+    process2 = Process(target=jobbaterai)
+
+    process1.start()
+    process2.start()
+   
     
     while True:
         schedule.run_pending()
